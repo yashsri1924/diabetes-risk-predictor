@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Diabetes Risk Predictor</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 20px; }
+    h1 { font-size: 22px; }
+    label { display: block; margin-top: 12px; font-size: 14px; font-weight: bold; }
+    input { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; }
+    button { margin-top: 20px; padding: 10px 20px; background: #028090; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    #result { margin-top: 24px; padding: 16px; border-radius: 6px; display: none; }
+    .low { background: #E4F3F1; }
+    .high { background: #FCE4E1; }
+    .factor { font-size: 13px; margin: 4px 0; }
+    .bar-track { width: 100%; height: 22px; background: #E0E0E0; border-radius: 11px; overflow: hidden; margin: 10px 0 14px; }
+    .bar-fill { height: 100%; border-radius: 11px; transition: width 0.6s ease; display: flex; align-items: center; justify-content: flex-end; color: white; font-size: 11px; font-weight: bold; padding-right: 8px; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <h1>Diabetes Risk Predictor (Demo)</h1>
+  <form id="form">
+    <label>Pregnancies</label><input type="number" id="Pregnancies" value="2" step="1">
+    <label>Glucose</label><input type="number" id="Glucose" value="120">
+    <label>Blood Pressure</label><input type="number" id="BloodPressure" value="70">
+    <label>Skin Thickness</label><input type="number" id="SkinThickness" value="20">
+    <label>Insulin</label><input type="number" id="Insulin" value="79">
+    <label>BMI</label><input type="number" id="BMI" value="28" step="0.1">
+    <label>Diabetes Pedigree Function</label><input type="number" id="DiabetesPedigreeFunction" value="0.5" step="0.01">
+    <label>Age</label><input type="number" id="Age" value="33">
+    <button type="submit">Predict Risk</button>
+  </form>
+  <div id="result"></div>
+
+  <script>
+    document.getElementById("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fields = ["Pregnancies","Glucose","BloodPressure","SkinThickness","Insulin","BMI","DiabetesPedigreeFunction","Age"];
+      const payload = {};
+      fields.forEach(f => payload[f] = document.getElementById(f).value);
+
+      const res = await fetch("/api/predict",  {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      const box = document.getElementById("result");
+      box.style.display = "block";
+      box.className = data.prediction === "High Risk" ? "high" : "low";
+
+      const pct = data.risk_score_percent;
+      // Green (low risk) to red (high risk), based on percentage
+      const barColor = pct < 33 ? "#02C39A" : pct < 66 ? "#F4A259" : "#C0524A";
+
+      let html = `<strong>${data.prediction}</strong> — Risk score: ${pct}%`;
+      html += `<div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${barColor};">${pct}%</div></div>`;
+      html += `Top contributing factors:<br>`;
+      data.top_factors.forEach(f => {
+        const dir = f.impact > 0 ? "increased" : "decreased";
+        html += `<div class="factor">• ${f.feature} ${dir} the risk (SHAP: ${f.impact})</div>`;
+      });
+      box.innerHTML = html;
+    });
+  </script>
+</body>
+</html>
