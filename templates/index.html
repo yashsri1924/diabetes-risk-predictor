@@ -5,37 +5,149 @@
   <title>Disease Risk Predictor</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; max-width: 560px; margin: 40px auto; padding: 0 20px; color: #222; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 560px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #222;
+    }
+
     h1 { font-size: 24px; margin-bottom: 4px; }
     .subtitle { color: #5C7A7D; font-size: 14px; margin-bottom: 20px; }
-    .disease-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
-    .tab-btn { flex: 1; padding: 10px; border: 2px solid #028090; background: white; color: #028090;
-               border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; }
-    .tab-btn.active { background: #028090; color: white; }
-    label { display: block; margin-top: 14px; font-size: 13px; font-weight: bold; color: #333; }
-    input, select { width: 100%; padding: 9px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-    button.predict { margin-top: 22px; padding: 12px 20px; width: 100%; background: #028090; color: white;
-                      border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; }
-    button.predict:hover { background: #026e7a; }
-    #result { margin-top: 24px; padding: 18px; border-radius: 8px; display: none; }
+
+    .disease-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #028090;
+      background: white;
+      color: #028090;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .tab-btn.active {
+      background: #028090;
+      color: white;
+    }
+
+    label {
+      display: block;
+      margin-top: 14px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .required {
+      color: red;
+      margin-left: 2px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 9px;
+      margin-top: 4px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    button.predict {
+      margin-top: 22px;
+      padding: 12px 20px;
+      width: 100%;
+      background: #028090;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    button.predict:hover {
+      background: #026e7a;
+    }
+
+    #result {
+      margin-top: 24px;
+      padding: 18px;
+      border-radius: 8px;
+      display: none;
+    }
+
     .low { background: #E4F3F1; }
     .high { background: #FCE4E1; }
-    .factor { font-size: 13px; margin: 5px 0; }
-    .bar-track { width: 100%; height: 24px; background: #E0E0E0; border-radius: 12px; overflow: hidden; margin: 12px 0 16px; }
-    .bar-fill { height: 100%; border-radius: 12px; transition: width 0.6s ease; display: flex; align-items: center;
-                justify-content: flex-end; color: white; font-size: 11px; font-weight: bold; padding-right: 8px; }
-    .model-tag { display: inline-block; font-size: 11px; color: #5C7A7D; margin-top: 10px; }
-    .error-box { margin-top: 16px; padding: 12px; background: #FCE4E1; border-radius: 6px; color: #C0524A; font-size: 13px; display: none; }
+
+    .factor {
+      font-size: 13px;
+      margin: 5px 0;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 24px;
+      background: #E0E0E0;
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 12px 0 16px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 12px;
+      transition: width 0.6s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      padding-right: 8px;
+    }
+
+    .model-tag {
+      display: inline-block;
+      font-size: 11px;
+      color: #5C7A7D;
+      margin-top: 10px;
+    }
+
+    .error-box {
+      margin-top: 16px;
+      padding: 12px;
+      background: #FCE4E1;
+      border-radius: 6px;
+      color: #C0524A;
+      font-size: 13px;
+      display: none;
+    }
   </style>
 </head>
+
 <body>
+
   <h1>Disease Risk Predictor</h1>
-  <div class="subtitle">AI-powered risk prediction with explainable results (SHAP)</div>
+  <div class="subtitle">
+    AI-powered risk prediction with explainable results (SHAP)
+  </div>
 
   <div class="disease-tabs" id="tabs"></div>
 
   <form id="form"></form>
-  <button class="predict" id="predictBtn" type="button">Predict Risk</button>
+
+  <button class="predict" id="predictBtn" type="button">
+    Predict Risk
+  </button>
 
   <div class="error-box" id="errorBox"></div>
   <div id="result"></div>
@@ -47,18 +159,21 @@
     function renderTabs() {
       const tabsEl = document.getElementById("tabs");
       tabsEl.innerHTML = "";
+
       Object.entries(DISEASES).forEach(([key, info]) => {
         const btn = document.createElement("button");
+        btn.type = "button";
         btn.className = "tab-btn" + (key === currentDisease ? " active" : "");
         btn.textContent = info.label;
-        btn.type = "button";
-        btn.addEventListener("click", () => {
+
+        btn.onclick = () => {
           currentDisease = key;
           renderTabs();
           renderForm();
           document.getElementById("result").style.display = "none";
           document.getElementById("errorBox").style.display = "none";
-        });
+        };
+
         tabsEl.appendChild(btn);
       });
     }
@@ -66,17 +181,22 @@
     function renderForm() {
       const formEl = document.getElementById("form");
       formEl.innerHTML = "";
+
       const fields = DISEASES[currentDisease].fields;
       const order = DISEASES[currentDisease].field_order;
+
       order.forEach((key) => {
         const meta = fields[key];
+
         const label = document.createElement("label");
-        label.textContent = meta.label;
+        label.innerHTML = `${meta.label}<span class="required">*</span>`;
         formEl.appendChild(label);
 
         if (meta.type === "select") {
           const select = document.createElement("select");
           select.id = key;
+          select.required = true;
+
           meta.options.forEach(([val, text]) => {
             const opt = document.createElement("option");
             opt.value = val;
@@ -84,38 +204,62 @@
             if (val === meta.default) opt.selected = true;
             select.appendChild(opt);
           });
+
           formEl.appendChild(select);
+
         } else {
+
           const input = document.createElement("input");
           input.type = "number";
           input.id = key;
           input.value = meta.default;
+          input.required = true;
+
           if (meta.step) input.step = meta.step;
+
           formEl.appendChild(input);
         }
       });
     }
 
     async function predict() {
-      const fields = DISEASES[currentDisease].field_order;
+
+      const form = document.getElementById("form");
+
+      // Required validation
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
       const payload = {};
-      fields.forEach(f => payload[f] = document.getElementById(f).value);
+      const fields = DISEASES[currentDisease].field_order;
+
+      fields.forEach(f => {
+        payload[f] = document.getElementById(f).value;
+      });
 
       const errorBox = document.getElementById("errorBox");
-      const box = document.getElementById("result");
+      const resultBox = document.getElementById("result");
+
       errorBox.style.display = "none";
-      box.style.display = "none";
+      resultBox.style.display = "none";
 
       let res, data;
+
       try {
         res = await fetch(`/api/predict/${currentDisease}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify(payload)
         });
+
         data = await res.json();
-      } catch (err) {
-        errorBox.textContent = "Could not reach the server. Is Flask running?";
+
+      } catch (e) {
+        errorBox.textContent = "Could not reach the server.";
         errorBox.style.display = "block";
         return;
       }
@@ -126,27 +270,59 @@
         return;
       }
 
-      box.style.display = "block";
-      const isHigh = data.prediction.toLowerCase().includes("high");
-      box.className = isHigh ? "high" : "low";
+      resultBox.style.display = "block";
+
+      const high = data.prediction.toLowerCase().includes("high");
+      resultBox.className = high ? "high" : "low";
 
       const pct = data.risk_score_percent;
-      const barColor = pct < 33 ? "#02C39A" : pct < 66 ? "#F4A259" : "#C0524A";
 
-      let html = `<strong>${data.prediction}</strong> — Risk score: ${pct}%`;
-      html += `<div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${barColor};">${pct}%</div></div>`;
-      html += `Top contributing factors:<br>`;
+      const color =
+        pct < 33 ? "#02C39A" :
+        pct < 66 ? "#F4A259" :
+        "#C0524A";
+
+      let html = `
+        <strong>${data.prediction}</strong><br><br>
+        Risk Score: <b>${pct}%</b>
+
+        <div class="bar-track">
+          <div class="bar-fill"
+               style="width:${pct}%; background:${color}">
+            ${pct}%
+          </div>
+        </div>
+
+        <b>Top contributing factors</b><br>
+      `;
+
       data.top_factors.forEach(f => {
         const dir = f.impact > 0 ? "increased" : "decreased";
-        html += `<div class="factor">• ${f.feature} ${dir} the risk (SHAP: ${f.impact})</div>`;
+
+        html += `
+          <div class="factor">
+            • ${f.feature} ${dir} the risk
+            (SHAP: ${f.impact})
+          </div>
+        `;
       });
-      html += `<div class="model-tag">Model used: ${data.model_used}</div>`;
-      box.innerHTML = html;
+
+      html += `
+        <div class="model-tag">
+          Model Used: ${data.model_used}
+        </div>
+      `;
+
+      resultBox.innerHTML = html;
     }
 
-    document.getElementById("predictBtn").addEventListener("click", predict);
+    document.getElementById("predictBtn")
+      .addEventListener("click", predict);
+
     renderTabs();
     renderForm();
+
   </script>
+
 </body>
 </html>
