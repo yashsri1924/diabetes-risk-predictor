@@ -1,0 +1,62 @@
+"""
+Central configuration for both disease prediction models.
+Adding a new disease later just means adding one entry here.
+"""
+
+DISEASES = {
+    "diabetes": {
+        "label": "Diabetes",
+        "csv": "diabetes.csv",
+        "has_header": False,
+        "columns": ["Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "Insulin",
+                    "BMI", "DiabetesPedigreeFunction", "Age", "Outcome"],
+        "target": "Outcome",
+        "zero_as_missing": ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"],
+        "positive_label": "High Diabetes Risk",
+        "negative_label": "Low Diabetes Risk",
+        "fields": {
+            "Pregnancies":              {"label": "Pregnancies", "type": "number", "default": 2, "step": 1},
+            "Glucose":                  {"label": "Glucose (plasma concentration)", "type": "number", "default": 120, "step": 1},
+            "BloodPressure":            {"label": "Blood Pressure (diastolic, mm Hg)", "type": "number", "default": 70, "step": 1},
+            "SkinThickness":            {"label": "Skin Thickness (triceps, mm)", "type": "number", "default": 20, "step": 1},
+            "Insulin":                  {"label": "Insulin (2-hr serum, mu U/ml)", "type": "number", "default": 79, "step": 1},
+            "BMI":                      {"label": "BMI (body mass index)", "type": "number", "default": 28, "step": 0.1},
+            "DiabetesPedigreeFunction": {"label": "Diabetes Pedigree Function (genetic risk score)", "type": "number", "default": 0.5, "step": 0.01},
+            "Age":                      {"label": "Age (years)", "type": "number", "default": 33, "step": 1},
+        },
+    },
+    "heart": {
+        "label": "Heart Disease",
+        "csv": "heart.csv",
+        "has_header": True,
+        "columns": None,
+        "target": "target",
+        "zero_as_missing": [],
+        "positive_label": "High Heart Disease Risk",
+        "negative_label": "Low Heart Disease Risk",
+        "fields": {
+            "age":      {"label": "Age (years)", "type": "number", "default": 55, "step": 1},
+            "sex":      {"label": "Sex", "type": "select", "options": [("1", "Male"), ("0", "Female")], "default": "1"},
+            "cp":       {"label": "Chest Pain Type", "type": "select",
+                         "options": [("0", "Typical angina"), ("1", "Atypical angina"),
+                                     ("2", "Non-anginal pain"), ("3", "Asymptomatic")], "default": "1"},
+            "trestbps": {"label": "Resting Blood Pressure (mm Hg)", "type": "number", "default": 130, "step": 1},
+            "chol":     {"label": "Serum Cholesterol (mg/dl)", "type": "number", "default": 230, "step": 1},
+            "fbs":      {"label": "Fasting Blood Sugar > 120 mg/dl", "type": "select",
+                         "options": [("1", "Yes"), ("0", "No")], "default": "0"},
+            "restecg":  {"label": "Resting ECG Result", "type": "select",
+                         "options": [("0", "Normal"), ("1", "ST-T abnormality"), ("2", "Left ventricular hypertrophy")],
+                         "default": "0"},
+            "thalach":  {"label": "Max Heart Rate Achieved", "type": "number", "default": 150, "step": 1},
+            "exang":    {"label": "Exercise-Induced Angina", "type": "select",
+                         "options": [("1", "Yes"), ("0", "No")], "default": "0"},
+            "oldpeak":  {"label": "ST Depression (exercise vs rest)", "type": "number", "default": 1.0, "step": 0.1},
+            "slope":    {"label": "Slope of Peak Exercise ST Segment", "type": "select",
+                         "options": [("0", "Upsloping"), ("1", "Flat"), ("2", "Downsloping")], "default": "1"},
+            "ca":       {"label": "Major Vessels Colored by Fluoroscopy", "type": "select",
+                         "options": [("0", "0"), ("1", "1"), ("2", "2"), ("3", "3")], "default": "0"},
+            "thal":     {"label": "Thalassemia", "type": "select",
+                         "options": [("1", "Normal"), ("2", "Fixed defect"), ("3", "Reversible defect")], "default": "2"},
+        },
+    },
+}
