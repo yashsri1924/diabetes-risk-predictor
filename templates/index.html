@@ -2,56 +2,135 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Diabetes Risk Predictor</title>
+  <title>Disease Risk Predictor</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 20px; }
-    h1 { font-size: 22px; }
-    label { display: block; margin-top: 12px; font-size: 14px; font-weight: bold; }
-    input { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; }
-    button { margin-top: 20px; padding: 10px 20px; background: #028090; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    #result { margin-top: 24px; padding: 16px; border-radius: 6px; display: none; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; max-width: 560px; margin: 40px auto; padding: 0 20px; color: #222; }
+    h1 { font-size: 24px; margin-bottom: 4px; }
+    .subtitle { color: #5C7A7D; font-size: 14px; margin-bottom: 20px; }
+    .disease-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tab-btn { flex: 1; padding: 10px; border: 2px solid #028090; background: white; color: #028090;
+               border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; }
+    .tab-btn.active { background: #028090; color: white; }
+    label { display: block; margin-top: 14px; font-size: 13px; font-weight: bold; color: #333; }
+    input, select { width: 100%; padding: 9px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+    button.predict { margin-top: 22px; padding: 12px 20px; width: 100%; background: #028090; color: white;
+                      border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; }
+    button.predict:hover { background: #026e7a; }
+    #result { margin-top: 24px; padding: 18px; border-radius: 8px; display: none; }
     .low { background: #E4F3F1; }
     .high { background: #FCE4E1; }
-    .factor { font-size: 13px; margin: 4px 0; }
-    .bar-track { width: 100%; height: 22px; background: #E0E0E0; border-radius: 11px; overflow: hidden; margin: 10px 0 14px; }
-    .bar-fill { height: 100%; border-radius: 11px; transition: width 0.6s ease; display: flex; align-items: center; justify-content: flex-end; color: white; font-size: 11px; font-weight: bold; padding-right: 8px; box-sizing: border-box; }
+    .factor { font-size: 13px; margin: 5px 0; }
+    .bar-track { width: 100%; height: 24px; background: #E0E0E0; border-radius: 12px; overflow: hidden; margin: 12px 0 16px; }
+    .bar-fill { height: 100%; border-radius: 12px; transition: width 0.6s ease; display: flex; align-items: center;
+                justify-content: flex-end; color: white; font-size: 11px; font-weight: bold; padding-right: 8px; }
+    .model-tag { display: inline-block; font-size: 11px; color: #5C7A7D; margin-top: 10px; }
+    .error-box { margin-top: 16px; padding: 12px; background: #FCE4E1; border-radius: 6px; color: #C0524A; font-size: 13px; display: none; }
   </style>
 </head>
 <body>
-  <h1>Diabetes Risk Predictor (Demo)</h1>
-  <form id="form">
-    <label>Pregnancies</label><input type="number" id="Pregnancies" value="2" step="1">
-    <label>Glucose</label><input type="number" id="Glucose" value="120">
-    <label>Blood Pressure</label><input type="number" id="BloodPressure" value="70">
-    <label>Skin Thickness</label><input type="number" id="SkinThickness" value="20">
-    <label>Insulin</label><input type="number" id="Insulin" value="79">
-    <label>BMI</label><input type="number" id="BMI" value="28" step="0.1">
-    <label>Diabetes Pedigree Function</label><input type="number" id="DiabetesPedigreeFunction" value="0.5" step="0.01">
-    <label>Age</label><input type="number" id="Age" value="33">
-    <button type="submit">Predict Risk</button>
-  </form>
+  <h1>Disease Risk Predictor</h1>
+  <div class="subtitle">AI-powered risk prediction with explainable results (SHAP)</div>
+
+  <div class="disease-tabs" id="tabs"></div>
+
+  <form id="form"></form>
+  <button class="predict" id="predictBtn" type="button">Predict Risk</button>
+
+  <div class="error-box" id="errorBox"></div>
   <div id="result"></div>
 
   <script>
-    document.getElementById("form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const fields = ["Pregnancies","Glucose","BloodPressure","SkinThickness","Insulin","BMI","DiabetesPedigreeFunction","Age"];
+    const DISEASES = {{ diseases | tojson }};
+    let currentDisease = Object.keys(DISEASES)[0];
+
+    function renderTabs() {
+      const tabsEl = document.getElementById("tabs");
+      tabsEl.innerHTML = "";
+      Object.entries(DISEASES).forEach(([key, info]) => {
+        const btn = document.createElement("button");
+        btn.className = "tab-btn" + (key === currentDisease ? " active" : "");
+        btn.textContent = info.label;
+        btn.type = "button";
+        btn.addEventListener("click", () => {
+          currentDisease = key;
+          renderTabs();
+          renderForm();
+          document.getElementById("result").style.display = "none";
+          document.getElementById("errorBox").style.display = "none";
+        });
+        tabsEl.appendChild(btn);
+      });
+    }
+
+    function renderForm() {
+      const formEl = document.getElementById("form");
+      formEl.innerHTML = "";
+      const fields = DISEASES[currentDisease].fields;
+      const order = DISEASES[currentDisease].field_order;
+      order.forEach((key) => {
+        const meta = fields[key];
+        const label = document.createElement("label");
+        label.textContent = meta.label;
+        formEl.appendChild(label);
+
+        if (meta.type === "select") {
+          const select = document.createElement("select");
+          select.id = key;
+          meta.options.forEach(([val, text]) => {
+            const opt = document.createElement("option");
+            opt.value = val;
+            opt.textContent = text;
+            if (val === meta.default) opt.selected = true;
+            select.appendChild(opt);
+          });
+          formEl.appendChild(select);
+        } else {
+          const input = document.createElement("input");
+          input.type = "number";
+          input.id = key;
+          input.value = meta.default;
+          if (meta.step) input.step = meta.step;
+          formEl.appendChild(input);
+        }
+      });
+    }
+
+    async function predict() {
+      const fields = DISEASES[currentDisease].field_order;
       const payload = {};
       fields.forEach(f => payload[f] = document.getElementById(f).value);
 
-      const res = await fetch("/api/predict",  {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-
+      const errorBox = document.getElementById("errorBox");
       const box = document.getElementById("result");
+      errorBox.style.display = "none";
+      box.style.display = "none";
+
+      let res, data;
+      try {
+        res = await fetch(`/api/predict/${currentDisease}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        data = await res.json();
+      } catch (err) {
+        errorBox.textContent = "Could not reach the server. Is Flask running?";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      if (!res.ok) {
+        errorBox.textContent = data.error || "Something went wrong.";
+        errorBox.style.display = "block";
+        return;
+      }
+
       box.style.display = "block";
-      box.className = data.prediction === "High Risk" ? "high" : "low";
+      const isHigh = data.prediction.toLowerCase().includes("high");
+      box.className = isHigh ? "high" : "low";
 
       const pct = data.risk_score_percent;
-      // Green (low risk) to red (high risk), based on percentage
       const barColor = pct < 33 ? "#02C39A" : pct < 66 ? "#F4A259" : "#C0524A";
 
       let html = `<strong>${data.prediction}</strong> — Risk score: ${pct}%`;
@@ -61,8 +140,13 @@
         const dir = f.impact > 0 ? "increased" : "decreased";
         html += `<div class="factor">• ${f.feature} ${dir} the risk (SHAP: ${f.impact})</div>`;
       });
+      html += `<div class="model-tag">Model used: ${data.model_used}</div>`;
       box.innerHTML = html;
-    });
+    }
+
+    document.getElementById("predictBtn").addEventListener("click", predict);
+    renderTabs();
+    renderForm();
   </script>
 </body>
 </html>
